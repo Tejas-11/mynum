@@ -40,3 +40,52 @@ void num::printnum(){
 int main(){
     num("4298520");
 }
+struct digit add(struct digit *n1,struct digit *n2)
+{
+    struct digit *ansh=NULL,*c,*anst=NULL;
+    int d=0;
+    while(true)
+    {
+        c=new(struct digit);
+        c->val=n1->val + n2->val+d;
+        d=c->val /10;
+        c->next=NULL;
+        if(ansh!=NULL)
+        {
+            ansh->next=c;
+            c->prev=ansh;
+        }
+        else
+        {
+            anst=c;
+        }
+        ansh=c;
+        n1=n1->next;
+        n2=n2->next;
+        if(n1==NULL||n2==NULL)
+        break;
+    }
+    while(n1!=NULL)
+    {
+        c=new(struct digit);
+        c->val=n1->val+d;
+        d=c->val /10;
+        c->next=NULL;
+        ansh->next=c;
+        c->prev=ansh;
+        ansh=c;
+        n1=n1->next;
+    }
+    while(n2!=NULL)
+    {
+        c=new(struct digit);
+        c->val=n2->val+d;
+        d=c->val /10;
+        c->next=NULL;
+        ansh->next=c;
+        c->prev=ansh;
+        ansh=c;
+        n2=n2->next;
+    }
+    return ansh;
+}
