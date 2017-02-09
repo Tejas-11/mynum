@@ -1,4 +1,6 @@
 #include<bits/stdc++.h>
+#ifndef NUM_H
+#define NUM_H
 using namespace std;
 struct digit{
     int val=0;
@@ -6,40 +8,221 @@ struct digit{
 };
 
 class num{
+    num(digit* beg, digit* fin){
+        this-> head = beg;
+        this-> tail = fin;
+        this-> str = "";
+    }
+    int cmp(struct digit *t1,struct digit *t2);
 public:
     digit *head=NULL;
     digit *tail=NULL;
+    bool sign=true;
     string str;
     num(string str){
+        if(str[0]=='-')
+            this->sign = false;
+        if(str[0]=='-' or str[0]=='+')
+            str=str.substr(1,str.size());
         auto ll = getll(str,0,NULL);
         head = ll.first;
         tail = ll.second;
         this->str = str;
     }
-    num(digit* beg, digit* fin){
-        this-> head = beg;
-        this-> tail = fin;
-    }
+    num(){
+    };
     void printnum();
+    void setstring();
     pair<digit*,digit*> getll(string str,int beg,digit* prev);
     digit* getdigit(int val,digit* prev,digit* next);
+    void sub(digit* n1,digit* n2);
     void adddigit(int val);
     void multiply(int mul);
     void multiply(num* b);
-    void add(num* b);
-    num operator+(num& b){
+    void add(const num& b);
+    void sub(const num& a);
+    num divide(const num& a);
+    void add2(num* a);
+    num operator+(const num& b){
         num ans("0");
-        ans.add(this);
-        ans.add(&b);
+        if(this->sign==b.sign){
+            ans.add(*this);
+            ans.add(b);
+            ans.sign=b.sign;
+        }
+        else{
+            if(cmp(this->tail,b.tail)!=2){
+                ans.add(*this);
+                ans.sub(b);
+                ans.sign = (this->sign);
+            }
+            else{
+                ans.add(b);
+                ans.sub(*this);
+                ans.sign = b.sign;
+            }
+        }
+        ans.setstring();
         return ans;
     }
-    num operator*(int& b){
-        this->multiply(b);
+    num& operator+=(const num& b){
+        if(this->sign==b.sign){
+            this->add(b);
+        }
+        else{
+            if(cmp(this->tail,b.tail)!=2){
+                this->sub(b);
+            }
+            else{
+                num* temp = this;
+                *this = b;
+                this->sub(*temp);
+            }
+        }
+        this->setstring();
+        return *this;
     }
+    num operator-(const num& b){
+        num ans(b.str);
+        ans.sign=!b.sign;
+        num temp = *this+ans;
+        temp.setstring();
+        return temp;
+    }
+    num& operator-=(const num& b){
+        this->sub(b);
+        this->setstring();
+        return *this;
+    }
+    num operator*(const int& b){
+        num ans(this->str);
+        ans.multiply(b);
+        if(this->sign==(b>=0))
+            ans.sign=true;
+        else
+            ans.sign=false;
+        ans.setstring();
+        return ans;
+    }
+    num operator*(const num& b){
+        num ans("0");
+        for(digit* ptr = b.head;ptr!=NULL;ptr=ptr->next){
+            ans+=(*this)*(ptr->val);
+            if(ptr->next!=NULL)
+                ans.adddigit(0);
+        }
+        if(this->sign==b.sign)
+            ans.sign=true;
+        else
+            ans.sign=false;
+        ans.setstring();
+        return ans;
+    }
+    num operator/(const num& b){
+        num ans(this->str);
+        num temp = ans.divide(b);
+        ans.setstring();
+        return temp;
+    }
+    num operator%(const num& b){
+        num ans(this->str);
+        num temp = ans.divide(b);
+        ans.setstring();
+        return ans;
+    }
+    void operator/=(const num& b){
+        this->divide(b);
+        this->setstring();
+    }
+    bool operator<(const num&b){
+        if(this->sign==true)
+        {
+            if(b.sign==true)
+                return (cmp(this->tail,b.tail)==2);
+            else
+                return false;
+        }
+        else
+        {
+            if(b.sign==true)
+                return true;
+            else
+                return !(cmp(this->tail,b.tail)==1);
+        }
+    }
+    bool operator<=(const num&b){
+        if(this->sign==true)
+        {
+            if(b.sign==true)
+                return (cmp(this->tail,b.tail)!=1);
+            else
+                return false;
+        }
+        else
+        {
+            if(b.sign==true)
+                return true;
+            else
+                return (cmp(this->tail,b.tail)!=2);
+        }
+    }
+    bool operator==(const num&b){
+        if(this->sign==b.sign)
+            return (cmp(this->tail,b.tail)==0);
+        else
+            return false;
+    }
+    bool operator>=(const num&b){
+        if(this->sign==true)
+        {
+            if(b.sign==true)
+                return (cmp(this->tail,b.tail)!=2);
+            else
+                return true;
+        }
+        else
+        {
+            if(b.sign==true)
+                return false;
+            else
+                return (cmp(this->tail,b.tail)!=1);
+        }
+        return (cmp(this->tail,b.tail)!=2);
+    }
+    bool operator>(const num&b){
+        if(this->sign==true)
+        {
+            if(b.sign==true)
+                return (cmp(this->tail,b.tail)==1);
+            else
+                return true;
+        }
+        else
+        {
+            if(b.sign==true)
+                return false;
+            else
+                return (cmp(this->tail,b.tail)==2);
+        }
+    }
+    friend ostream &operator<<( ostream &output, const num &n ){
+        if(!n.sign)
+            output<<"-";
+        for(digit* ptr = n.head;ptr!=NULL;ptr=ptr->next)
+            output<<ptr->val;
+        return output;
+    }
+    friend istream &operator>>( istream  &input, num &n ) {
+        string str;
+        input >> str;
+        n = num(str);
+        return input;
+    }
+    num multiply(num a,num b);
 };
-void num::add(num* b){
+void num::add(const num& b){
     digit *aptr = this->tail;
-    digit* bptr = b->tail;
+    digit* bptr = b.tail;
     int carry=0,temp=0;
     for(;bptr!=NULL or carry;aptr = aptr->prev){
         temp=carry + ((aptr==NULL)?0:aptr->val) + ((bptr==NULL)?0:bptr->val);
@@ -62,8 +245,7 @@ void num::multiply(int mul){
         carry = temp/10;
     }
 }
-
-void num::add(num* a){
+void num::add2(num* a){
     struct digit *c;
     struct digit *n1=this->tail,*n2=a->tail;
     int d=0;
@@ -106,12 +288,12 @@ void num::add(num* a){
         n1=n1->prev;
     this->head=n1;
 }
-void num::sub(num* a){
-    struct digit *n1=this->tail,*n2=a->tail;
+void num::sub(const num& a){
+    struct digit *n1=this->tail,*n2=a.tail;
     int d=0;
     while(true)
     {
-        n1->val=n1->val - n2->val+d;
+        n1->val=n1->val - ((n2==NULL)?0:n2->val)+d;
         if((n1->val)<0)
         {
             d=-1;
@@ -119,9 +301,10 @@ void num::sub(num* a){
         }
         else
             d=0;
-        if(n2->prev==NULL)
+        if(n1->prev==NULL)
             break;
-        n2=n2->prev;
+        if(n2!=NULL)
+            n2=n2->prev;
         n1=n1->prev;
     }
     while(n1->next!=NULL)
@@ -138,39 +321,7 @@ void num::sub(num* a){
     }
     this->head=n1;
 }
-
-void sub(digit* n1,digit* n2){
-    int d=0;
-    while(true)
-    {
-        n1->val=n1->val - n2->val+d;
-        if((n1->val)<0)
-        {
-            d=-1;
-            n1->val = (n1->val)+10;
-        }
-        else
-            d=0;
-        if(n2->prev==NULL)
-            break;
-        n2=n2->prev;
-        n1=n1->prev;
-    }
-    while(n1->next!=NULL)
-    {
-        if(n1->val!=0)
-        {
-            break;
-        }
-        else
-        {
-            n1->next->prev=NULL;
-            n1=n1->next;
-        }
-    }
-}
-
-int cmp(struct digit *t1,struct digit *t2){
+int num::cmp(struct digit *t1,struct digit *t2){
     int c=0;
     while(true)
     {
@@ -190,17 +341,19 @@ int cmp(struct digit *t1,struct digit *t2){
         {
             return 1;
         }
+        t1 = t1->prev;
+        t2 = t2->prev;
     }
 }
-
-num num::divide(num* a){
-    struct digit *n1,*n2,*qh,*qt;//n1 will be divided by n2 and q will have quotient
+num num::divide(const num& a){
+    digit *n1;
+    digit *n2;
+    digit *qh,*qt;//n1 will be divided by n2 and q will have quotient
     int c,t=0;
     qh=new(struct digit);
     qt=qh;
     n1=this->head;
-    n2=a->tail;
-    //n1=head and n2=tail
+    n2=a.tail;
     while(n1!=NULL)
     {
         c=cmp(n1,n2);
@@ -219,18 +372,76 @@ num num::divide(num* a){
                 qt->next=new(struct digit);
                 qt->next->prev=qt;
                 qt=qt->next;
+                t=0;
+            }
+            else{
+                    if(this->head->val==0&&this->head->next!=NULL)
+                    {
+                        this->head=this->head->next;
+                        this->head->prev=NULL;
+                    }
+                    qt->next=new(struct digit);
+                qt->next->prev=qt;
+                qt=qt->next;
             }
         }
     }
-    num ans = new num(qh,qt);
-    return ans;
-    //qt will have tail of quotient
-    //qh will have head of quotient
-    //and the remainder will be in this;
+    while(qh->val==0)
+    {
+        if(qh->next==NULL)
+            break;
+        qh->next->prev=NULL;
+        qh=qh->next;
+    }
+    num* ans = new num(qh,qt);
+    return *ans;
+}
+void num::sub(digit* n1,digit* n2){
+    int d=0;
+    struct digit* c;
+    c=n1;
+    while(true)
+    {
+        n1->val=n1->val - ((n2==NULL)?0:n2->val)+d;
+        if((n1->val)<0)
+        {
+            d=-1;
+            n1->val = (n1->val)+10;
+        }
+        else
+            d=0;
+        if(n1->prev==NULL)
+            break;
+        if(n2!=NULL)
+            n2=n2->prev;
+        n1=n1->prev;
+    }
+    if(c->next!=NULL)
+        c=c->next;
+    while(n1!=c)
+    {
+        if(n1->val!=0)
+        {
+            break;
+        }
+        else
+        {
+            n1->next->prev=NULL;
+            n1=n1->next;
+        }
+    }
+    this->head=n1;
 }
 void num::printnum(){
     for(digit* ptr = this->head;ptr!=NULL;ptr=ptr->next)
         cout<<ptr->val;
+    return;
+}
+void num::setstring(){
+    string temp="";
+    for(digit* ptr = this->head;ptr!=NULL;ptr=ptr->next)
+        temp+=ptr->val+'0';
+    this->str=temp;
     return;
 }
 void num::adddigit(int val){
@@ -252,12 +463,4 @@ digit* num::getdigit(int val,digit* prev,digit* next){
     return ans;
 }
 
-
-int main(){
-    num var("20"),var2("440");
-    num var3 = var+var2;
-    var3.multiply(2);
-    var3.printnum();
-    cout<<endl;
-    //var.multiply(12);
-}
+#endif
